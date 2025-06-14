@@ -10,7 +10,8 @@
     "name": "Asus TUF GAMING OC GeForce GTX 1650 SUPER 4GB GDDR6 Black",
     "manufacturer": "Asus",
     "part_numbers": [
-      "TUF-GTX1650S-O4G-GAMING                                                    90YV0E42-M0NA00"
+      "TUF-GTX1650S-O4G-GAMING",
+      "90YV0E42-M0NA00"
     ],
     "series": "GeForce GTX 1650 SUPER",
     "variant": "Asus"
@@ -38,8 +39,7 @@
     "displayport_2_1a": 0,
     "displayport_1_4a": 1,
     "dvi_d": 0,
-    "vga": 0,
-    "_id": "67f9c50c865ad0c3553e924c"
+    "vga": 0
   },
   "general_product_information": {
     "amazon_sku": "B081KY5L57",
