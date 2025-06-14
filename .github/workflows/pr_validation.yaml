@@ -26,6 +26,17 @@ jobs:
         run: |
           npm install -g ajv-cli@5.0.0
 
+      - name: Compile JSON schemas
+        run: |
+          set -e
+          for schema in schemas/*.schema.json; do
+            echo "Compiling $schema"
+            if ! ajv compile -s "$schema"; then
+              echo "::error file=$schema::Schema failed to compile"
+              exit 1
+            fi
+          done
+
       - name: Get changed JSON files
         id: changed-files
         run: |
