@@ -40,7 +40,29 @@ Thank you for your interest in contributing to BuildCores OpenDB! This document 
 
 ### Local Validation
 
-TODO
+Before opening a pull request, you can validate your JSON files locally. This
+repository uses [`ajv-cli`](https://github.com/ajv-validator/ajv-cli) for schema
+validation.
+
+1. **Install Node.js and npm** if you don't already have them. Any recent LTS
+   version (16 or newer) works.
+2. **Install ajv-cli** globally (or use it via `npx`):
+   ```bash
+   npm install -g ajv-cli
+   ```
+3. **Run validation**. Point `ajv` to the appropriate schema and data files. For
+   example, to validate all CPU JSON files:
+   ```bash
+   ajv validate -s schemas/CPU.schema.json -d open-db/CPU/*.json --all-errors
+   ```
+   Replace `CPU` with other categories as needed, or provide a specific file
+   path:
+   ```bash
+   ajv validate -s schemas/<category>.schema.json -d open-db/<category>/<file>.json --all-errors
+   ```
+4. Ensure the filename matches the `opendb_id` field inside each JSON file.
+
+Fix any validation errors before submitting your PR.
 
 ### PR Validation
 
