@@ -15,7 +15,7 @@ https://buildcores.com/products
 
 We have a few near-term goals for this project to improve data quality and increase the utility of BuildCores (or any other project that relies on this data). 
 
-- We want to collect manufacturer product page urls for each product in our database.
+- We want to collect manufacturer product page URLs for each product in our database.
 - We want to collect PDFs for each product in our database.
   - Good examples are motherboard and case manuals. We can extract useful information out of these.
 - We want to collect motherboard BIOS versioning data along with CPU support lists.
