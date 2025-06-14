@@ -24,16 +24,10 @@
       ],
       "description": "The storage capacity of the drive in GB (e.g., 4000 GB)"
     },
-    "type": [
-      {
-        "type": [
-          "string",
-          "null"
-        ],
-        "description": "The type of storage drive"
-      },
-      "null"
-    ],
+    "type": {
+      "type": ["string", "null"],
+      "description": "The type of storage drive"
+    },
     "form_factor": {
       "type": [
         "string",
