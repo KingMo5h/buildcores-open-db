@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PC Component Viewer</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      background: #1e1e1e;
+      color: #333;
+    }
+    #viewer {
+      flex: 7;
+    }
+    #controls {
+      flex: 3;
+      box-sizing: border-box;
+      background: #ffffff;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+    }
+    h1 {
+      margin: 0 0 20px;
+      font-size: 1.4em;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .info {
+      font-size: 0.9em;
+      margin-top: 4px;
+      color: #222;
+    }
+    .info strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+<div id="viewer"></div>
+<div id="controls">
+  <h1>PC Component Viewer</h1>
+  <label for="caseSelect">Case</label>
+  <select id="caseSelect"></select>
+  <div id="caseInfo" class="info"></div>
+
+  <label for="gpuSelect">GPU</label>
+  <select id="gpuSelect"></select>
+  <div id="gpuInfo" class="info"></div>
+
+  <label for="cpuSelect">CPU</label>
+  <select id="cpuSelect"></select>
+  <div id="cpuInfo" class="info"></div>
+
+  <label for="ramSelect">RAM</label>
+  <select id="ramSelect"></select>
+  <div id="ramInfo" class="info"></div>
+</div>
+<script src="https://unpkg.com/three/build/three.min.js"></script>
+<script type="module">
+import { OrbitControls } from 'https://unpkg.com/three/examples/jsm/controls/OrbitControls.js';
+
+const components = {
+  case: [
+    { name: 'Fractal Design Meshify C', path: '../../open-db/PCCase/0000caee-142c-48f6-99be-9c6f4dd18845.json' },
+    { name: 'Fractal Design North', path: '../../open-db/PCCase/000a0d8c-7590-4fd6-a724-41c36a3a4a9f.json' }
+  ],
+  gpu: [
+    { name: 'Asus ROG STRIX RX 570', path: '../../open-db/GPU/00034350-61f0-4057-ad9d-9aaea84645d0.json' },
+    { name: 'Radeon RX 570 ARMOR MK2', path: '../../open-db/GPU/00097466-68c7-4288-87af-a692475e1962.json' }
+  ],
+  cpu: [
+    { name: 'Intel Xeon E5 1650 V3', path: '../../open-db/CPU/016d1180-e254-43da-ad22-67895ac633b6.json' },
+    { name: 'Intel Xeon E5 2660 V4', path: '../../open-db/CPU/01ad7eaa-17b3-46d8-a57b-3fcc7e513ad7.json' }
+  ],
+  ram: [
+    { name: 'TeamGroup T-Create Expert', path: '../../open-db/RAM/000c0c27-8b0a-4760-92ec-89ef39e630d8.json' },
+    { name: 'TeamGroup Xtreem Pink', path: '../../open-db/RAM/001a1e21-a4f0-4c44-aadd-8e7af7203a2e.json' }
+  ]
+};
+
+const selects = {
+  case: document.getElementById('caseSelect'),
+  gpu: document.getElementById('gpuSelect'),
+  cpu: document.getElementById('cpuSelect'),
+  ram: document.getElementById('ramSelect')
+};
+
+const infoDivs = {
+  case: document.getElementById('caseInfo'),
+  gpu: document.getElementById('gpuInfo'),
+  cpu: document.getElementById('cpuInfo'),
+  ram: document.getElementById('ramInfo')
+};
+
+for (const [type, options] of Object.entries(components)) {
+  const sel = selects[type];
+  options.forEach((opt, i) => {
+    const el = document.createElement('option');
+    el.value = i;
+    el.textContent = opt.name;
+    sel.appendChild(el);
+  });
+}
+
+let scene, camera, renderer, controls;
+const meshes = {};
+
+initViewer();
+loadAll();
+
+for (const [type, select] of Object.entries(selects)) {
+  select.addEventListener('change', () => loadComponent(type, select.value));
+}
+
+function initViewer() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1e1e1e);
+
+  camera = new THREE.PerspectiveCamera(60, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+  camera.position.set(200, 150, 200);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+  viewer.appendChild(renderer.domElement);
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 50, 0);
+  controls.update();
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambient);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+  dir.position.set(50, 100, 70);
+  scene.add(dir);
+
+  const grid = new THREE.GridHelper(400, 10, 0x444444, 0x888888);
+  scene.add(grid);
+
+  window.addEventListener('resize', onWindowResize);
+  animate();
+}
+
+function onWindowResize() {
+  camera.aspect = viewer.clientWidth / viewer.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+function clearMesh(type) {
+  if (meshes[type]) {
+    scene.remove(meshes[type]);
+    meshes[type].geometry.dispose();
+    meshes[type].material.dispose();
+    meshes[type] = null;
+  }
+}
+
+async function loadAll() {
+  for (const type of Object.keys(components)) {
+    await loadComponent(type, 0);
+  }
+}
+
+async function loadComponent(type, index) {
+  const item = components[type][index];
+  const res = await fetch(item.path);
+  const data = await res.json();
+  clearMesh(type);
+  let mesh;
+  switch (type) {
+    case 'case':
+      mesh = makeCase(data);
+      mesh.position.set(-80, 0, 0);
+      break;
+    case 'gpu':
+      mesh = makeGPU(data);
+      mesh.position.set(80, 0, 0);
+      break;
+    case 'cpu':
+      mesh = makeCPU(data);
+      mesh.position.set(0, 0, -80);
+      break;
+    case 'ram':
+      mesh = makeRAM(data);
+      mesh.position.set(0, 0, 80);
+      break;
+  }
+  scene.add(mesh);
+  meshes[type] = mesh;
+  updateInfo(type, data);
+}
+
+function makeCase(data) {
+  const dims = parseCaseDimensions(data.dimensions);
+  const geom = new THREE.BoxGeometry(dims.w, dims.h, dims.d);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x6699ff, transparent: true, opacity: 0.6 });
+  return new THREE.Mesh(geom, mat);
+}
+
+function parseCaseDimensions(text) {
+  if (!text) return { w: 200, h: 200, d: 200 };
+  const parts = text.split(/x/i).map(p => parseFloat(p.trim()));
+  return { d: parts[0] || 200, w: parts[1] || 200, h: parts[2] || 200 };
+}
+
+function makeGPU(data) {
+  const length = data.length || 250;
+  const slots = data.total_slot_width || 2;
+  const height = 120;
+  const thickness = slots * 20;
+  const geom = new THREE.BoxGeometry(length, height, thickness);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xff9966, transparent: true, opacity: 0.6 });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.rotation.y = Math.PI / 2;
+  return mesh;
+}
+
+function makeCPU(data) {
+  const geom = new THREE.BoxGeometry(40, 4, 40);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x99cc66, transparent: true, opacity: 0.8 });
+  return new THREE.Mesh(geom, mat);
+}
+
+function makeRAM(data) {
+  const geom = new THREE.BoxGeometry(140, 30, 7);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x9966cc, transparent: true, opacity: 0.8 });
+  return new THREE.Mesh(geom, mat);
+}
+
+function formatPrice(data) {
+  const price = data.price ?? data.price_usd ?? data.msrp ?? data.general_product_information?.price;
+  return price != null ? `$${price}` : 'N/A';
+}
+
+function updateInfo(type, data) {
+  const div = infoDivs[type];
+  if (!div) return;
+  let html = `<strong>${data.metadata?.name || ''}</strong>`;
+  html += `<br>Price: ${formatPrice(data)}`;
+  switch (type) {
+    case 'gpu':
+      html += `<br>Interface: ${data.interface || 'N/A'}`;
+      html += `<br>Memory: ${data.memory || 'N/A'} GB ${data.memory_type || ''}`;
+      html += `<br>Length: ${data.length || 'N/A'} mm`;
+      break;
+    case 'cpu':
+      html += `<br>Cores: ${data.cores?.total || 'N/A'} Threads: ${data.cores?.threads || 'N/A'}`;
+      html += `<br>Base Clock: ${data.clocks?.performance?.base || 'N/A'} GHz`;
+      html += `<br>Boost Clock: ${data.clocks?.performance?.boost || 'N/A'} GHz`;
+      break;
+    case 'ram':
+      const cap = data.capacity || data.modules?.capacity_gb;
+      html += `<br>Type: ${data.ram_type || 'N/A'}`;
+      html += `<br>Speed: ${data.speed || 'N/A'} MHz`;
+      html += `<br>Capacity: ${cap || 'N/A'} GB`;
+      break;
+    case 'case':
+      html += `<br>Form Factor: ${data.form_factor || 'N/A'}`;
+      html += `<br>Dimensions: ${data.dimensions || 'N/A'}`;
+      html += `<br>Max GPU Length: ${data.max_video_card_length || 'N/A'} mm`;
+      break;
+  }
+  div.innerHTML = html;
+}
+</script>
+</body>
+</html>
